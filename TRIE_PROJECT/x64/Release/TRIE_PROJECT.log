@@ -1,0 +1,8 @@
+﻿  TRIE_PROJECT.cpp
+D:\NGOC\TRIE_PROJECT\TRIE_PROJECT\header.h(101,25): warning C4806: '==': unsafe operation: no value of type 'bool' promoted to type 'int' can equal the given constant
+  Generating code
+  2 of 176 functions ( 1.1%) were compiled, the rest were copied from previous compilation.
+    1 functions were new in current compilation
+    2 functions had inline decision re-evaluated but remain unchanged
+  Finished generating code
+  TRIE_PROJECT.vcxproj -> D:\NGOC\TRIE_PROJECT\x64\Release\TRIE_PROJECT.exe

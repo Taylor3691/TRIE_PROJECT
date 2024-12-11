@@ -1,3 +1,4 @@
 ﻿  TRIE_PROJECT.cpp
-D:\NGOC\TRIE_PROJECT\TRIE_PROJECT\header.h(92,25): warning C4806: '==': unsafe operation: no value of type 'bool' promoted to type 'int' can equal the given constant
+D:\NGOC\TRIE_PROJECT\TRIE_PROJECT\header.h(100,25): warning C4806: '==': unsafe operation: no value of type 'bool' promoted to type 'int' can equal the given constant
+D:\NGOC\TRIE_PROJECT\TRIE_PROJECT\header.h(122,21): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
   TRIE_PROJECT.vcxproj -> D:\NGOC\TRIE_PROJECT\x64\Debug\TRIE_PROJECT.exe

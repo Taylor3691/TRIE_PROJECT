@@ -3,6 +3,7 @@
 #include <fstream>
 #include <string>
 #include <chrono>
+#include <cstring>
 using namespace std;
 
 const int NUMBEROFNODES = 1500000;
@@ -15,8 +16,10 @@ struct Trie {
 	};
 	Node* nodes = new Node[NUMBEROFNODES];
 	int current;
+	int numberOfSuggest;
 
 	Trie(){
+		numberOfSuggest = 0;
 		current = 0;
 		memset(nodes[0].child, -1, sizeof(nodes[0].child));
 		nodes[0].count = nodes[0].exist = 0;
@@ -76,11 +79,17 @@ struct Trie {
 		deleteProcessing(word, 0, 0);
 	}
 
-	void printAllWordByLetter(Trie tree, int pos, string word = "") {
+	void printAllWordByLetter(Trie& tree, int& pos, string word = "") {
+		if (this->numberOfSuggest <= 0) return;
 		for (int i = 0; i <= 25; i++) {
 			if (this->nodes[pos].child[i] != -1) {
+				if (numberOfSuggest <= 0) return;
 				word.push_back((char)(i + 'a'));
-				if (tree.nodes[pos].exist && word != "") cout << word << endl;
+				if (tree.nodes[pos].exist && word != "") {
+					cout << numberOfSuggest << "th: " << word<<"\n";
+					this->numberOfSuggest--;
+
+				}
 				printAllWordByLetter(*this, this->nodes[pos].child[i], word);
 				word.pop_back();
 			}
@@ -88,17 +97,18 @@ struct Trie {
 		return;
 	}
 
-	void suggestPrefixString(string word) {
+	void suggestPrefixString(string word, int k) {
 		if (findWord(word) == -1) {
-			cout << "No prefix word availiable..." << endl;
+			cout << "No prefix word availiable...\n";
 			return;
 		}
+		this->numberOfSuggest = k;
+		cout << "Number of suggest we need: " << numberOfSuggest << "\n";
 		int pos = 0;
 		for (char c : word) {
 			int key = c - 'a';
 			pos = nodes[pos].child[key];
 		}
-		cout << word << "\n";
 		printAllWordByLetter(*this, pos, word);
 	}
 };
@@ -119,71 +129,131 @@ Trie creatDictionaryFromFile(string filename) {
 }
 
 
+struct TrieNode {
 
+	// pointer array for child nodes of each node
+	TrieNode* childNode[26];
+	int wordCount;
 
+	TrieNode()
+	{
+		// constructor
+		// initialize the wordCnt variable with 0
+		// initialize every index of childNode array with
+		// NULL
+		wordCount = 0;
+		for (int i = 0; i < 26; i++) {
+			childNode[i] = NULL;
+		}
+	}
+};
 
+void insert_key(TrieNode* root, string& key)
+{
+	// Initialize the currentNode pointer
+	// with the root node
+	TrieNode* currentNode = root;
 
-//struct Trie {
-//    struct Node {
-//        Node* child[26];
-//        int exist, cnt;
-//
-//        Node() {
-//            for (int i = 0; i < 26; i++) child[i] = NULL;
-//            exist = cnt = 0;
-//        }
-//    };
-//
-//    int cur;
-//    Node* root;
-//    Trie() : cur(0) {
-//        root = new Node();
-//    };
-//
-//    void add_string(string s) {
-//        Node* p = root;
-//        for (auto f : s) {
-//            int c = f - 'a';
-//            if (p->child[c] == NULL) p->child[c] = new Node();
-//
-//            p = p->child[c];
-//            p->cnt++;
-//        }
-//        p->exist++;
-//    }
-//
-//    bool delete_string_recursive(Node* p, string& s, int i) {
-//        if (i != (int)s.size()) {
-//            int c = s[i] - 'a';
-//            bool isChildDeleted = delete_string_recursive(p->child[c], s, i + 1);
-//            if (isChildDeleted) p->child[c] = NULL;
-//        }
-//        else p->exist--;
-//
-//        if (p != root) {
-//            p->cnt--;
-//            if (p->cnt == 0) {
-//                delete(p); // Khác với cài đặt bằng mảng,
-//                // ta có thể thực sự xóa đỉnh này đi
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    void delete_string(string s) {
-//        if (find_string(s) == false) return;
-//
-//        delete_string_recursive(root, s, 0);
-//    }
-//
-//    bool find_string(string s) {
-//        Node* p = root;
-//        for (auto f : s) {
-//            int c = f - 'a';
-//            if (p->child[c] == NULL) return false;
-//            p = p->child[c];
-//        }
-//        return (p->exist != 0);
-//    }
-//};
+	// Iterate across the length of the string
+	for (auto c : key) {
+
+		// Check if the node exist for the current
+		// character in the Trie.
+		if (currentNode->childNode[c - 'a'] == NULL) {
+
+			// If node for current character does not exist
+			// then make a new node
+			TrieNode* newNode = new TrieNode();
+
+			// Keep the reference for the newly created
+			// node.
+			currentNode->childNode[c - 'a'] = newNode;
+		}
+
+		// Now, move the current node pointer to the newly
+		// created node.
+		currentNode = currentNode->childNode[c - 'a'];
+	}
+
+	// Increment the wordEndCount for the last currentNode
+	// pointer this implies that there is a string ending at
+	// currentNode.
+	currentNode->wordCount++;
+}
+
+bool search_key(TrieNode* root, string& key)
+{
+	// Initialize the currentNode pointer
+	// with the root node
+	TrieNode* currentNode = root;
+
+	// Iterate across the length of the string
+	for (auto c : key) {
+
+		// Check if the node exist for the current
+		// character in the Trie.
+		if (currentNode->childNode[c - 'a'] == NULL) {
+
+			// Given word does not exist in Trie
+			return false;
+		}
+
+		// Move the currentNode pointer to the already
+		// existing node for current character.
+		currentNode = currentNode->childNode[c - 'a'];
+	}
+
+	return (currentNode->wordCount > 0);
+}
+
+bool delete_key(TrieNode* root, string& word)
+{
+	TrieNode* currentNode = root;
+	TrieNode* lastBranchNode = NULL;
+	char lastBrachChar = 'a';
+
+	for (auto c : word) {
+		if (currentNode->childNode[c - 'a'] == NULL) {
+			return false;
+		}
+		else {
+			int count = 0;
+			for (int i = 0; i < 26; i++) {
+				if (currentNode->childNode[i] != NULL)
+					count++;
+			}
+
+			if (count > 1) {
+				lastBranchNode = currentNode;
+				lastBrachChar = c;
+			}
+			currentNode = currentNode->childNode[c - 'a'];
+		}
+	}
+
+	int count = 0;
+	for (int i = 0; i < 26; i++) {
+		if (currentNode->childNode[i] != NULL)
+			count++;
+	}
+
+	// Case 1: The deleted word is a prefix of other words
+	// in Trie.
+	if (count > 0) {
+		currentNode->wordCount--;
+		return true;
+	}
+
+	// Case 2: The deleted word shares a common prefix with
+	// other words in Trie.
+	if (lastBranchNode != NULL) {
+		lastBranchNode->childNode[lastBrachChar] = NULL;
+		return true;
+	}
+	// Case 3: The deleted word does not share any common
+	// prefix with other words in Trie.
+	else {
+		root->childNode[word[0]] = NULL;
+		return true;
+	}
+}
