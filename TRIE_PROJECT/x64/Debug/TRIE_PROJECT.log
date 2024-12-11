@@ -1,0 +1,3 @@
+﻿  TRIE_PROJECT.cpp
+D:\NGOC\TRIE_PROJECT\TRIE_PROJECT\header.h(92,25): warning C4806: '==': unsafe operation: no value of type 'bool' promoted to type 'int' can equal the given constant
+  TRIE_PROJECT.vcxproj -> D:\NGOC\TRIE_PROJECT\x64\Debug\TRIE_PROJECT.exe
