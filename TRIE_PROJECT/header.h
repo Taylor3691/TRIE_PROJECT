@@ -4,6 +4,10 @@
 #include <string>
 #include <chrono>
 #include <cstring>
+#include <map>
+#include <vector>
+#include <thread>
+#include <conio.h>
 using namespace std;
 
 const int NUMBEROFNODES = 1500000;
@@ -79,32 +83,39 @@ struct Trie {
 		deleteProcessing(word, 0, 0);
 	}
 
-	void printAllWordByLetter(Trie& tree, int& pos, string word = "") {
+	void printAllWordByLetter(Trie tree, int pos, string word = "") {
 		if (this->numberOfSuggest <= 0) return;
 		for (int i = 0; i <= 25; i++) {
+			int back_track = pos;
 			if (this->nodes[pos].child[i] != -1) {
 				if (numberOfSuggest <= 0) return;
+				pos = nodes[pos].child[i];
 				word.push_back((char)(i + 'a'));
-				if (tree.nodes[pos].exist && word != "") {
-					cout << numberOfSuggest << "th: " << word<<"\n";
+				if (tree.nodes[pos].exist != 0 && word != "") {
+					cout << word << "\n";
 					this->numberOfSuggest--;
-
 				}
-				printAllWordByLetter(*this, this->nodes[pos].child[i], word);
+				printAllWordByLetter(*this, pos, word);
+				pos = back_track;
 				word.pop_back();
 			}
 		}
 		return;
 	}
 
-	void suggestPrefixString(string word, int k) {
-		if (findWord(word) == -1) {
-			cout << "No prefix word availiable...\n";
-			return;
-		}
-		this->numberOfSuggest = k;
-		cout << "Number of suggest we need: " << numberOfSuggest << "\n";
+	void suggestPrefixString(string word, int k = -1) {
 		int pos = 0;
+		for (char c : word) {
+			int key = c - 'a';
+			if (nodes[pos].child[key] == -1) {
+				cout << "No word start with prefix: " << word << "\n";
+				return;
+			}
+			pos = nodes[pos].child[key];
+		}
+		this->numberOfSuggest = k == -1 ? 10000000 : k;
+		cout << "Number of suggest we need: " << numberOfSuggest << "\n";
+		pos = 0;
 		for (char c : word) {
 			int key = c - 'a';
 			pos = nodes[pos].child[key];
@@ -117,13 +128,9 @@ Trie creatDictionaryFromFile(string filename) {
 	Trie tree;
 	ifstream input(filename);
 	string word = "";
-	//auto current = std::chrono::steady_clock::now();
 	while (input >> word) {
 		tree.addWord(word);
 	}
-	//auto end = std::chrono::steady_clock::now();
-	//auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - current).count();
-	//cout << elapsed_time;
 	input.close();
 	return tree;
 }
@@ -257,3 +264,225 @@ bool delete_key(TrieNode* root, string& word)
 		return true;
 	}
 }
+const int HASH_SIZE = 500000;
+struct Dictionary {
+	string* hashTable;
+	int size;
+	int collision;
+	int numberOfSuggestion;
+
+	Dictionary() {
+		this->hashTable = NULL;
+		this->size = 0;
+		this->collision = 0;
+		numberOfSuggestion = 0;
+	}
+
+	vector<string> readFile(string filename) {
+		ifstream input(filename);
+		vector<string> res;
+		string token = "";
+		while (input >> token) {
+			res.push_back(token);
+		}
+		input.close();
+		return res;
+	}
+
+	long long hashString(string word) {
+		long long key = 0;
+		long long mod = 1e9 + 9;
+		if (word.size() <= 20) {
+			long long factor = 1;
+			for (int i = 0; i < word.size(); i++) {
+				key = key + (((word[i] % mod) * factor % mod) % mod);
+				factor = (factor * 31);
+				factor %= mod;
+				key %= mod;
+			}
+		}
+		else {
+			word = word.substr(word.size() - 20);
+			long long factor = 1;
+			for (int i = 0; i < word.size(); i++) {
+				key = key + (((word[i] % mod) * factor % mod) % mod);
+				factor = (factor * 31);
+				factor %= mod;
+				key %= mod;
+			}
+		}
+		return key % this->size;
+	}
+
+	void Insert(string* hashTable, string word) {
+		int key = hashString(word);
+		int cnt = 0;
+		int i = 0;
+		while (this->hashTable[key] != "" && cnt <= this->size) {
+			this->collision++;
+			key = key++;
+			key %= this->size;
+			cnt++;
+		}
+		if (cnt <= this->size) {
+			hashTable[key] = word;
+		}
+	}
+
+	void creatHashTable(string filename) {
+		vector<string> list = readFile(filename);
+		this->size = list.size() + 1000;
+		this->hashTable = new string[this->size];
+		for (int i = 0; i < this->size; i++) {
+			hashTable[i] = "";
+		}
+		for (string token : list) {
+			Insert(this->hashTable, token);
+		}
+	}
+
+	void printAllWord() {
+		for (int i = 0; i < this->size; i++) {
+			if(this->hashTable[i]!= "")cout << this->hashTable[i] << endl;
+		}
+	}
+
+	int searchWord(string word) {
+		int key = hashString(word);
+		int cnt = 0;
+		while (this->hashTable[key] != word && cnt <= this->size) {
+			key++;
+			key %= this->size;
+			cnt++;
+		}
+
+		if (cnt <= this->size) {
+			return key;
+		}
+		return -1;
+	}
+
+	void deleteWord(string word) {
+		int key = hashString(word);
+		int cnt = 0;
+		while (this->hashTable[key] != word && cnt <= this->size) {
+			key++;
+			key %= this->size;
+			cnt++;
+		}
+		if (cnt <= this->size) {
+			this->hashTable[key] = "";
+			return;
+		}
+		return;
+	}
+
+	string common_prefix(string s1, string s2) {
+		int leng = min(s1.length(), s2.length());
+		for (int i = 0; i < leng; i++) {
+			if (s1[i] != s2[i]) {
+				return s1.substr(0, i);
+			}
+		}
+		return s1.substr(0, leng);
+	}
+
+	void suggestWord(string prefix, int k) {
+		this->numberOfSuggestion = k;
+		for (int i = 0; i < this->size; i++) {
+			if (numberOfSuggestion <= 0) return;
+			string check = common_prefix(prefix, this->hashTable[i]);
+			if (check.size() == prefix.size() && this->hashTable[i] != prefix) {
+				cout << this->hashTable[i] <<"\n";
+				this->numberOfSuggestion--;
+			}
+		}
+		if (this->numberOfSuggestion == k) {
+			cout << "No word start with prefix: " << prefix << "\n";
+		}
+	}
+};
+
+void measureRuntimeFileByTrie(Trie tree) {
+	system("cls");
+	cout << "What size of prefix do you want to test, please choose...\n";
+	cout << "1. From 1-2 character\n";
+	cout << "2. From 3-5 character\n";
+	cout << "3. From 1-5 character\n";
+	cout << "Your choice: ";
+	string cmd = "";
+	cin >> cmd;
+	cout << "How many words maximum do you want to suggest in every prefix ? ";
+	cout << "Your answer: ";
+	int k;
+	cin >> k;
+	string start = "";
+	string end = "";
+	if (cmd == "1") {
+		start = "1";
+		end = "2";
+	}
+	else if (cmd == "2") {
+		start = "3";
+		end = "5";
+	}
+	else if (cmd == "3") {
+		start = "1";
+		end = "5";
+	}
+	ifstream input("prefix_sample_" + start + "_to_" + end + ".txt");
+	string token = "";
+	auto current2 = std::chrono::steady_clock::now();
+	while (input >> token) {
+		cout << "All word start with " << token << "\n";
+		tree.suggestPrefixString(token, k);
+		cout << "____________________________________________________________\n";
+	}
+	auto end2 = std::chrono::steady_clock::now();
+	auto elapsed_time2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - current2).count();
+	cout << "It takes " << elapsed_time2 << " microseconds with Trie\n";
+	input.close();
+}
+
+void measureRuntimeFileByHashTable(Dictionary dictionary) {
+	system("cls");
+	cout << "What size of prefix do you want to test, please choose...\n";
+	cout << "1. From 1-2 character\n";
+	cout << "2. From 3-5 character\n";
+	cout << "3. From 1-5 character\n";
+	cout << "Your choice: ";
+	string cmd = "";
+	cin >> cmd;
+	cout << "How many words maximum do you want to suggest in every prefix ? ";
+	cout << "Your answer: ";
+	int k;
+	cin >> k;
+	string start = "";
+	string end = "";
+	if (cmd == "1") {
+		start = "1";
+		end = "2";
+	}
+	else if (cmd == "2") {
+		start = "3";
+		end = "5";
+	}
+	else if (cmd == "3") {
+		start = "1";
+		end = "5";
+	}
+	ifstream input("prefix_sample_" + start + "_to_" + end + ".txt");
+	string token = "";
+	auto current2 = std::chrono::steady_clock::now();
+	while (input >> token) {
+		cout << "All word start with " << token << "\n";
+		dictionary.suggestWord(token, k);
+		cout << "____________________________________________________________\n";
+	}
+	auto end2 = std::chrono::steady_clock::now();
+	auto elapsed_time2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - current2).count();
+	cout << "It takes " << elapsed_time2 << " microseconds with HashTable\n";
+	input.close();
+}
+
+

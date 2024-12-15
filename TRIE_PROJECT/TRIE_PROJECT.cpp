@@ -3,32 +3,94 @@
 int main()
 {
     Trie tree;
-    //cout << numberOfNode("words_alpha.txt");
-    auto current2 = std::chrono::steady_clock::now();
     tree = creatDictionaryFromFile("words_alpha.txt");
-    auto end2 = std::chrono::steady_clock::now();
-    auto elapsed_time2 = std::chrono::duration_cast<std::chrono::nanosecondsư>(end2- current2).count();
-    cout << elapsed_time2 << endl;
-    //cout << tree.findWord("oversufficiency");
-    //cout << tree.current << endl;
-    //tree.printAllWordByLetter(tree, 0);
-    //auto current = std::chrono::steady_clock::now();
-    //tree.suggestPrefixString("aa",15);
-    //auto end = std::chrono::steady_clock::now();
-    //auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - current).count();
-    //cout << elapsed_time << endl;
-    //auto elapsed_time2 = std::chrono::duration_cast<std::chrono::microseconds>(end - current).count();
-    //cout << elapsed_time2 << endl;
-    TrieNode* root = new TrieNode();
-    ifstream input("words_alpha.txt");
-    string key = "";
-    auto current = std::chrono::steady_clock::now();
-    while (input >> key) {
-        insert_key(root, key);
+    Dictionary dictionary;
+    dictionary.creatHashTable("words_alpha.txt");
+    while (true) {
+        string cmd = "";
+        system("cls");
+        cout << "Please choose your command...\n";
+        cout << "1. Insert one word to Trie\n";
+        cout << "2. Delete one word frome Trie\n";
+        cout << "3. Search one word in Trie\n";
+        cout << "4. Suggest k words with the prefix input in Trie\n";
+        cout << "5. Compare runtime k words suggestion with HashTable\n";
+        cout << "6. Mesure runtime with random prefix in file\n";
+        cout << "7. Quit\n";
+        cout << "Please enter a number: ";
+        cin >> cmd;
+        if (cmd == "1") {
+            string word;
+            cout << "Please text the word to insert: ";
+            cin >> word;
+            tree.addWord(word);
+        }
+        else if (cmd == "2") {
+            string word;
+            cout << "Please text the word to delete: ";
+            cin >> word;
+            tree.deleteWord(word);
+        }
+        else if (cmd == "3") {
+            string word;
+            cout << "Please text the word to search: ";
+            cin >> word;
+            int res = tree.findWord(word);
+            if (res) {
+                cout << "Your word are in Trie\n";
+            }
+            else {
+                cout << "Your word are not in Trie\n";
+            }
+        }
+        else if (cmd == "4") {
+            int k = 0;
+            string prefix = "";
+            cout << "Please text your prefix: ";
+            cin >> prefix;
+            cout << "How many words do you want to show: ";
+            cin >> k;
+            tree.suggestPrefixString(prefix, k);
+        }
+        else if (cmd == "5") {
+            int k = 0;
+            string prefix = "";
+            cout << "Please text your prefix: ";
+            cin >> prefix;
+            cout << "How many words do you want to show: ";
+            cin >> k;
+            cout << "Suggestion words by Trie\n";
+            auto current2 = std::chrono::steady_clock::now();
+            tree.suggestPrefixString(prefix, k);
+            auto end2 = std::chrono::steady_clock::now();
+            auto elapsed_time2 = std::chrono::duration_cast<std::chrono::microseconds>(end2 - current2).count();
+            cout << "Suggestion words by HashTable\n";
+            auto current = std::chrono::steady_clock::now();
+            dictionary.suggestWord(prefix, k);
+            auto end = std::chrono::steady_clock::now();
+            auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(end - current).count();
+            cout << "Trie takes " << elapsed_time2 << " microseconds to suggest " << k << " words\n";
+            cout << "HashTable takes " << elapsed_time << " microseconds to suggest " << k << " words\n";
+        }
+        else if(cmd == "6") {
+            system("cls");
+            cout << "Please choose the option below to measure...\n";
+            cout << "1. Trie\n";
+            cout << "2. HashTable\n";
+            string req = "";
+            cin >> req;
+            if (req == "1") {
+                measureRuntimeFileByTrie(tree);
+            }
+            else if (req == "2") {
+                measureRuntimeFileByHashTable(dictionary);
+            }
+        }
+        else if (cmd == "7") {
+            cout << "Thank You\n" << endl;
+            break;
+        }
+        cout << "Press any key to continue....\n";
+        _getch();
     }
-    auto end = std::chrono::steady_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono:: nanoseconds>(end - current).count();
-    cout << elapsed_time << endl;
-    int x; 
-    cin >> x;
 }

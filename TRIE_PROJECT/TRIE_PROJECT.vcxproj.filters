@@ -22,6 +22,10 @@
   <ItemGroup>
     <Text Include="words_alpha.txt" />
     <Text Include="word.txt" />
+    <Text Include="test.txt" />
+    <Text Include="prefix_sample_1_to_5.txt" />
+    <Text Include="prefix_sample_1_to_2.txt" />
+    <Text Include="prefix_sample_3_to_5.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="header.h">

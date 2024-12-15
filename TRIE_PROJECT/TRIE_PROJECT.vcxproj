@@ -130,6 +130,10 @@
     <ClCompile Include="TRIE_PROJECT.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="prefix_sample_1_to_2.txt" />
+    <Text Include="prefix_sample_1_to_5.txt" />
+    <Text Include="prefix_sample_3_to_5.txt" />
+    <Text Include="test.txt" />
     <Text Include="word.txt" />
     <Text Include="words_alpha.txt" />
   </ItemGroup>
