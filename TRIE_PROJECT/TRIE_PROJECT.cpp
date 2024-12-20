@@ -15,7 +15,7 @@ int main()
         cout << "3. Search one word in Trie\n";
         cout << "4. Suggest k words with the prefix input in Trie\n";
         cout << "5. Compare runtime k words suggestion with HashTable\n";
-        cout << "6. Mesure runtime with random prefix in file\n";
+        cout << "6. Measure runtime with random prefix in file\n";
         cout << "7. Quit\n";
         cout << "Please enter a number: ";
         cin >> cmd;
@@ -48,7 +48,7 @@ int main()
             string prefix = "";
             cout << "Please text your prefix: ";
             cin >> prefix;
-            cout << "How many words do you want to show: ";
+            cout << "How many words maximum do you want to show: ";
             cin >> k;
             tree.suggestPrefixString(prefix, k);
         }
@@ -94,3 +94,37 @@ int main()
         _getch();
     }
 }
+
+
+//int main() {
+//	SuffixTree tree;
+//
+//	// Input string for the suffix tree
+//	string text = "autocomplete";
+//	tree.buildTree(text);
+//	ifstream input("words_alpha.txt");
+//	string token = "";
+//	while (input >> token)
+//	{
+//		tree.buildTree(token);
+//	}
+//	input.close();
+//	// Prefix to autocomplete
+//	string prefix;
+//	cout << "Enter prefix: ";
+//	cin >> prefix;
+//
+//	// Perform autocomplete
+//	vector<string> suggestions = tree.autocomplete(prefix);
+//	if (suggestions.empty()) {
+//		cout << "No suggestions found for prefix \"" << prefix << "\"\n";
+//	}
+//	else {
+//		cout << "Suggestions for prefix \"" << prefix << "\":\n";
+//		for (const string& suggestion : suggestions) {
+//			cout << suggestion << "\n";
+//		}
+//	}
+//
+//	return 0;
+//}

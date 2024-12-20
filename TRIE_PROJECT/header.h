@@ -10,15 +10,15 @@
 #include <conio.h>
 using namespace std;
 
+
+
 const int NUMBEROFNODES = 1500000;
-
-
 struct Trie {
 	struct Node {
 		int child[26];
 		int exist, count;
 	};
-	Node* nodes = new Node[NUMBEROFNODES];
+	Node* nodes= new Node[NUMBEROFNODES];
 	int current;
 	int numberOfSuggest;
 
@@ -264,15 +264,16 @@ bool delete_key(TrieNode* root, string& word)
 		return true;
 	}
 }
-const int HASH_SIZE = 500000;
+
+const int HASH_SIZE = 400009;
 struct Dictionary {
-	string* hashTable;
+	vector<vector<string>> hashTable;
 	int size;
 	int collision;
 	int numberOfSuggestion;
 
 	Dictionary() {
-		this->hashTable = NULL;
+		this->hashTable.resize(HASH_SIZE);
 		this->size = 0;
 		this->collision = 0;
 		numberOfSuggestion = 0;
@@ -314,65 +315,49 @@ struct Dictionary {
 		return key % this->size;
 	}
 
-	void Insert(string* hashTable, string word) {
+	void Insert(string word) {
 		int key = hashString(word);
-		int cnt = 0;
-		int i = 0;
-		while (this->hashTable[key] != "" && cnt <= this->size) {
-			this->collision++;
-			key = key++;
-			key %= this->size;
-			cnt++;
-		}
-		if (cnt <= this->size) {
-			hashTable[key] = word;
-		}
+		if (this->hashTable[key].size() != 0) this->collision++;
+		this->hashTable[key].push_back(word);
 	}
-
+		
 	void creatHashTable(string filename) {
 		vector<string> list = readFile(filename);
-		this->size = list.size() + 1000;
-		this->hashTable = new string[this->size];
-		for (int i = 0; i < this->size; i++) {
-			hashTable[i] = "";
-		}
-		for (string token : list) {
-			Insert(this->hashTable, token);
+		this->size = list.size();
+		for (int i = 0; i < list.size(); i++) {
+			this->Insert(list[i]);
 		}
 	}
 
 	void printAllWord() {
-		for (int i = 0; i < this->size; i++) {
-			if(this->hashTable[i]!= "")cout << this->hashTable[i] << endl;
+		for (int i = 0; i < this->hashTable.size(); i++) {
+			if (this->hashTable[i].size() != 0) {
+				for (string s : this->hashTable[i]) {
+					cout << s << "\n";
+				}
+			}
 		}
 	}
 
 	int searchWord(string word) {
 		int key = hashString(word);
-		int cnt = 0;
-		while (this->hashTable[key] != word && cnt <= this->size) {
-			key++;
-			key %= this->size;
-			cnt++;
-		}
-
-		if (cnt <= this->size) {
-			return key;
+		for (string s : this->hashTable[key]) {
+			if (s == word) return 1;
 		}
 		return -1;
 	}
 
 	void deleteWord(string word) {
 		int key = hashString(word);
-		int cnt = 0;
-		while (this->hashTable[key] != word && cnt <= this->size) {
-			key++;
-			key %= this->size;
-			cnt++;
+		int index = -1;
+		for (int i = 0; i < this->hashTable[key].size(); i++) {
+			if (this->hashTable[key][i] == word) {
+				index = i;
+				break;
+			}
 		}
-		if (cnt <= this->size) {
-			this->hashTable[key] = "";
-			return;
+		if (index != -1) {
+			this->hashTable[key].erase(this->hashTable[key].begin() + index);
 		}
 		return;
 	}
@@ -389,17 +374,23 @@ struct Dictionary {
 
 	void suggestWord(string prefix, int k) {
 		this->numberOfSuggestion = k;
-		for (int i = 0; i < this->size; i++) {
-			if (numberOfSuggestion <= 0) return;
-			string check = common_prefix(prefix, this->hashTable[i]);
-			if (check.size() == prefix.size() && this->hashTable[i] != prefix) {
-				cout << this->hashTable[i] <<"\n";
-				this->numberOfSuggestion--;
+		for (int i = 0; i < this->hashTable.size(); i++) {
+			if (this->hashTable[i].size() != 0) {
+				for (string s : this->hashTable[i]) {
+					string res = common_prefix(s, prefix);
+					if (res == prefix) {
+						cout << s << "\n";
+						this->numberOfSuggestion--;
+					}
+					if (this->numberOfSuggestion <= 0) break;
+				}
 			}
+			if (this->numberOfSuggestion <= 0) break;
 		}
 		if (this->numberOfSuggestion == k) {
 			cout << "No word start with prefix: " << prefix << "\n";
 		}
+		this->numberOfSuggestion = 0;
 	}
 };
 
@@ -484,5 +475,80 @@ void measureRuntimeFileByHashTable(Dictionary dictionary) {
 	cout << "It takes " << elapsed_time2 << " microseconds with HashTable\n";
 	input.close();
 }
+
+#include <iostream>
+#include <unordered_map>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+// Node structure for the Suffix Tree
+struct Node {
+	unordered_map<char, Node*> children;
+	bool isEndOfWord = false;
+};
+
+// Suffix Tree class
+class SuffixTree {
+private:
+	Node* root;
+
+	// Helper function to insert a suffix into the tree
+	void insertSuffix(const string& suffix) {
+		Node* current = root;
+		for (char c : suffix) {
+			if (!current->children.count(c)) {
+				current->children[c] = new Node();
+			}
+			current = current->children[c];
+		}
+		current->isEndOfWord = true;
+	}
+
+	// Helper function for autocomplete
+	void findWords(Node* node, string currentPrefix, vector<string>& results) {
+		if (node->isEndOfWord) {
+			results.push_back(currentPrefix);
+		}
+		for (auto& child : node->children) {
+			findWords(child.second, currentPrefix + child.first, results);
+		}
+	}
+
+public:
+	// Constructor
+	SuffixTree() {
+		root = new Node();
+	}
+
+	// Destructor to free memory
+	~SuffixTree() {
+		delete root;
+	}
+
+	// Build the suffix tree for a given string
+	void buildTree(const string& text) {
+		for (size_t i = 0; i < text.length(); ++i) {
+			insertSuffix(text.substr(i));
+		}
+	}
+
+	// Perform autocomplete for a given prefix
+	vector<string> autocomplete(const string& prefix) {
+		Node* current = root;
+		for (char c : prefix) {
+			if (!current->children.count(c)) {
+				return {}; // No words found with the given prefix
+			}
+			current = current->children[c];
+		}
+
+		vector<string> results;
+		findWords(current, prefix, results);
+		return results;
+	}
+};
+
 
 
